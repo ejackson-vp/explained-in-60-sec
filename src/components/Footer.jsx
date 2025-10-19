@@ -1,6 +1,5 @@
 import { Box, Container, Typography, Link, IconButton, Divider } from '@mui/material';
-import { GitHub, Twitter } from '@mui/icons-material';
-import { Link as RouterLink } from 'react-router-dom';
+import { GitHub, LinkedIn, YouTube } from '@mui/icons-material';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -40,50 +39,29 @@ export default function Footer() {
             </Typography>
           </Box>
 
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 1,
-              textAlign: { xs: 'center', sm: 'left' },
-            }}
-          >
-            <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-              Legal
-            </Typography>
-            <Link
-              component={RouterLink}
-              to="/privacy"
-              color="text.secondary"
-              underline="hover"
-              sx={{ fontSize: '0.875rem' }}
-            >
-              Privacy Policy
-            </Link>
-            <Link
-              component={RouterLink}
-              to="/terms"
-              color="text.secondary"
-              underline="hover"
-              sx={{ fontSize: '0.875rem' }}
-            >
-              Terms of Service
-            </Link>
-            <Link
-              href="mailto:contact@explainedin60sec.com"
-              color="text.secondary"
-              underline="hover"
-              sx={{ fontSize: '0.875rem' }}
-            >
-              Contact Us
-            </Link>
-          </Box>
-
           <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
             <Typography variant="subtitle2" fontWeight={600} gutterBottom>
               Follow Us
             </Typography>
             <Box>
+              <IconButton
+                aria-label="YouTube"
+                href="https://youtube.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                size="small"
+              >
+                <YouTube />
+              </IconButton>
+              <IconButton
+                aria-label="LinkedIn"
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                size="small"
+              >
+                <LinkedIn />
+              </IconButton>
               <IconButton
                 aria-label="GitHub"
                 href="https://github.com"
@@ -92,15 +70,6 @@ export default function Footer() {
                 size="small"
               >
                 <GitHub />
-              </IconButton>
-              <IconButton
-                aria-label="Twitter"
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                size="small"
-              >
-                <Twitter />
               </IconButton>
             </Box>
           </Box>

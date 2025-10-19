@@ -7,8 +7,6 @@ import Footer from './components/Footer';
 import LoginDialog from './components/LoginDialog';
 import Home from './pages/Home';
 import Generate from './pages/Generate';
-import Privacy from './pages/Privacy';
-import Terms from './pages/Terms';
 
 function App() {
   const [themeMode, setThemeMode] = useState('light');
@@ -62,8 +60,6 @@ function App() {
           <Routes>
             <Route path="/" element={<Home onLoginClick={handleLoginClick} />} />
             <Route path="/generate" element={<Generate onLoginClick={handleLoginClick} />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
           </Routes>
         </Box>
 
