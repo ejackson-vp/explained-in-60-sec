@@ -1,262 +1,223 @@
-# Explained in 60 seconds
+# Explained in 60 Seconds
 
-A modern, polished landing page for an AI-powered micro podcast generator. Users can generate short 60-second audio podcasts explaining any topic.
+An AI-powered micro-podcast generator that transforms any topic into an engaging 60-second audio podcast. Built with Next.js 15, TypeScript, and Material UI, integrated with Voltage Park AI Factory.
 
-![React](https://img.shields.io/badge/React-19.1-blue?logo=react)
-![Material UI](https://img.shields.io/badge/Material%20UI-v5-007FFF?logo=mui)
-![Vite](https://img.shields.io/badge/Vite-7.1-646CFF?logo=vite)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org)
+[![React](https://img.shields.io/badge/React-19-blue?logo=react)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://typescriptlang.org)
+[![Material UI](https://img.shields.io/badge/Material%20UI-v5-007FFF?logo=mui)](https://mui.com)
 
 ## Features
 
-✨ **Modern UI/UX**
-- Sleek, professional design with Material UI v5
-- Smooth animations with reduced-motion support
-- Light/dark mode toggle with localStorage persistence
-- Fully responsive mobile-first design
+- 🎙️ **AI Podcast Generation** - Enter any topic and get a professionally narrated 60-second podcast
+- 🎨 **Modern UI** - Sleek Material UI design with dark/light mode
+- 📱 **Fully Responsive** - Optimized for all devices with touch-friendly controls
+- 🎧 **Audio Player** - Custom player with progress tracking and timestamps
+- ⚡ **Real-time Status** - Live polling to track generation progress
+- 📥 **Downloadable** - Save generated podcasts locally
+- 🌐 **Unified Architecture** - Single Next.js app with API routes and frontend
 
-🎧 **Audio Player**
-- Custom audio player with play/pause controls
-- Progress slider with timestamp display
-- Share and copy link functionality
-- Pause other players when one starts
-
-🔐 **Authentication**
-- Mock authentication system with localStorage
-- Login dialog with email validation
-- Protected routes for podcast generation
-- User avatar and profile menu
-
-📱 **Responsive Design**
-- Mobile-optimized with hamburger menu
-- Touch-friendly buttons (44px minimum)
-- Adaptive typography and spacing
-- No horizontal scrolling on any device
-
-♿ **Accessibility**
-- ARIA labels and semantic HTML
-- Keyboard navigation support
-- Screen reader friendly
-- AA contrast compliance
-
-🚀 **Performance**
-- Optimized bundle with Vite
-- Lazy loading and code splitting ready
-- Lighthouse score targets: Performance 90+, Accessibility 95+
-
-## Tech Stack
-
-- **React 19.1** - UI library
-- **Vite 7.1** - Build tool and dev server
-- **Material UI v5** - Component library
-- **React Router v6** - Client-side routing
-- **Emotion** - CSS-in-JS styling
-- **Inter Variable** - Modern typography
-
-## Getting Started
+## Quick Start
 
 ### Prerequisites
 
 - Node.js 18+ 
 - npm or yarn
+- [Voltage Park API credentials](https://voltagepark.com)
 
 ### Installation
 
-1. Clone the repository:
 ```bash
-git clone <repository-url>
+# 1. Clone the repository
+git clone <your-repo-url>
 cd explained-in-60-sec
-```
 
-2. Install dependencies:
-```bash
+# 2. Install dependencies
 npm install
-```
 
-3. Start the development server:
-```bash
+# 3. Set up environment variables
+cp .env.example .env.local
+# Edit .env.local with your Voltage Park credentials
+
+# 4. Run the development server
 npm run dev
+
+# 5. Open http://localhost:3000
 ```
 
-4. Open your browser to `http://localhost:5173`
+### Environment Variables
 
-### Build for Production
+Create a `.env.local` file in the root directory:
 
-```bash
-npm run build
-npm run preview
+```env
+VPSTUDIO_API_URL=your-voltagepark-api-url
+VPSTUDIO_BEARER_TOKEN=your-bearer-token
 ```
+
+Get your credentials from [Voltage Park](https://voltagepark.com).
+
+## Usage
+
+1. **Enter a Topic**: Type any topic (up to 128 characters) you want explained
+2. **Generate**: Click the generate button and wait ~30-60 seconds
+3. **Listen**: Play your podcast directly in the browser
+4. **Download**: Save the podcast for offline listening
+
+### Example Topics
+
+- "How quantum computers work"
+- "The history of the Roman Empire"
+- "Machine learning basics"
+- "Photosynthesis in plants"
+
+## Technology Stack
+
+- **[Next.js 15](https://nextjs.org)** - React framework with App Router
+- **[React 19](https://react.dev)** - UI library
+- **[TypeScript](https://typescriptlang.org)** - Type safety
+- **[Material UI v5](https://mui.com)** - Component library
+- **[Emotion](https://emotion.sh)** - CSS-in-JS styling
+- **[Voltage Park AI Factory](https://voltagepark.com)** - AI voice generation
 
 ## Project Structure
 
 ```
 explained-in-60-sec/
-├── public/
-│   ├── audio/                 # Placeholder audio files
-│   │   ├── sample1.mp3
-│   │   └── ...
-│   └── vite.svg
-├── src/
+├── app/
+│   ├── api/
+│   │   ├── podcast/
+│   │   │   ├── route.ts              # POST - Create podcast
+│   │   │   └── [id]/route.ts         # GET - Get status
+│   │   └── health/route.ts           # Health check
 │   ├── components/
-│   │   ├── AudioCard.jsx      # Reusable audio player card
-│   │   ├── Footer.jsx         # Site footer
-│   │   ├── Header.jsx         # Navigation header
-│   │   └── LoginDialog.jsx    # Login modal
-│   ├── contexts/
-│   │   └── AuthContext.jsx    # Mock authentication
-│   ├── pages/
-│   │   ├── Home.jsx           # Landing page
-│   │   ├── Generate.jsx       # Podcast generation page
-│   │   ├── Privacy.jsx        # Privacy policy
-│   │   └── Terms.jsx          # Terms of service
-│   ├── App.jsx                # Main app component
-│   ├── main.jsx              # Entry point
-│   ├── theme.js              # Material UI theme
-│   └── index.css
-├── index.html
-├── package.json
-└── vite.config.js
+│   │   ├── AudioCard.tsx             # Audio player component
+│   │   └── ThemeRegistry.tsx         # Theme provider
+│   ├── lib/
+│   │   ├── theme.ts                  # Material UI theme
+│   │   └── podcasts-store.ts         # State management
+│   ├── layout.tsx                    # Root layout
+│   └── page.tsx                      # Home page
+├── public/
+│   ├── audio/                        # Example audio files
+│   └── favicon.svg
+├── .env.example                      # Environment template
+├── next.config.js                    # Next.js config
+├── tsconfig.json                     # TypeScript config
+└── package.json
 ```
 
-## Key Components
+## API Endpoints
 
-### AudioCard
-Fully functional audio player with:
-- Play/pause toggle
-- Seekable progress slider
-- Formatted timestamps (mm:ss)
-- Share and copy link buttons
-- Generated by AI badge
+### POST /api/podcast
 
-### Header
-Responsive navigation with:
-- Brand name linked to home
-- Dark/light mode toggle
-- Login/profile menu
-- "Create yours" CTA button
-- Mobile hamburger menu
+Create a new podcast generation job.
 
-### Home Page
-- Hero section with gradient background
-- 6 example podcast cards in responsive grid
-- "Create your own" section with benefits
-- Collapsible "How it works" accordion
-
-### Generate Page
-- Protected route requiring login
-- Topic input form
-- Loading state with progress indicator
-- Generated result display
-- Tips for better podcasts
-
-## Backend Integration (Future)
-
-This is currently a frontend-only application with mock authentication and placeholder audio.
-
-### API Endpoints to Implement
-
-**POST /api/generate**
+**Request:**
 ```json
 {
   "topic": "Quantum Computing"
 }
 ```
 
-Response:
+**Response:**
 ```json
 {
-  "id": "abc123",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "processing",
+  "topic": "Quantum Computing"
+}
+```
+
+### GET /api/podcast/:id
+
+Get the status of a podcast job.
+
+**Response (completed):**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "completed",
   "topic": "Quantum Computing",
   "title": "60 seconds on: Quantum Computing",
-  "summary": "An AI-generated deep dive...",
-  "audioUrl": "https://cdn.example.com/podcasts/abc123.mp3",
+  "summary": "An AI-generated deep dive into Quantum Computing...",
+  "audioUrl": "https://...",
   "duration": 60,
-  "createdAt": "2025-10-19T12:00:00Z"
+  "createdAt": "2025-10-20T...",
+  "completedAt": "2025-10-20T..."
 }
 ```
 
-**GET /api/episodes**
-- List all example episodes
+### GET /api/health
 
-**GET /api/episodes/:id**
-- Get specific episode details
+Health check endpoint.
 
-**POST /api/auth/login**
-- User authentication (replace mock auth)
-
-**GET /api/auth/me**
-- Get current user profile
-
-### Integration Steps
-
-1. Create a backend API (Node.js/Express, Python/FastAPI, etc.)
-2. Replace `AuthContext.jsx` login/logout with real API calls
-3. Update `Generate.jsx` to POST to `/api/generate` endpoint
-4. Replace placeholder audio URLs with real CDN URLs
-5. Add error handling and retry logic
-6. Implement rate limiting and user quotas
-7. Add analytics and usage tracking
-
-### Environment Variables
-
-Create `.env` file:
-```env
-VITE_API_URL=https://api.explainedin60sec.com
-VITE_CDN_URL=https://cdn.explainedin60sec.com
-```
-
-Update API calls in code:
-```javascript
-const API_URL = import.meta.env.VITE_API_URL;
-```
-
-## Audio Files
-
-The `public/audio/` folder contains placeholder silent audio files. Replace these with actual podcast audio files before deployment.
-
-Audio requirements:
-- Format: MP3 or WAV
-- Duration: 60 seconds
-- Bit rate: 128kbps minimum
-- Sample rate: 44.1kHz
-
-## Customization
-
-### Theme Colors
-
-Edit `src/theme.js` to change the primary color palette:
-
-```javascript
-primary: {
-  main: '#5e35b1', // Deep purple
-  light: '#9162e4',
-  dark: '#4527a0',
+**Response:**
+```json
+{
+  "status": "ok",
+  "timestamp": "2025-10-20T...",
+  "podcasts": 3
 }
 ```
 
-### Brand Name
+## Development
 
-Update in `src/components/Header.jsx` and `index.html`.
+```bash
+# Start development server
+npm run dev
 
-### Example Episodes
+# Build for production
+npm run build
 
-Modify the `exampleEpisodes` array in `src/pages/Home.jsx`.
+# Start production server
+npm start
 
-## Browser Support
+# Run linter
+npm run lint
+```
 
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
+## Deployment
+
+Deploy to [Vercel](https://vercel.com) (recommended):
+
+```bash
+npm install -g vercel
+vercel
+```
+
+Or deploy to:
+- [Netlify](https://netlify.com)
+- [AWS Amplify](https://aws.amazon.com/amplify)
+- [Google Cloud Run](https://cloud.google.com/run)
+- Any Node.js hosting platform
+
+**Important:** Set environment variables (`VPSTUDIO_API_URL` and `VPSTUDIO_BEARER_TOKEN`) in your hosting platform's dashboard.
+
+## Production Notes
+
+The application currently uses in-memory storage for podcast jobs. For production deployment, consider:
+
+1. **Database Integration** - Replace `podcasts-store.ts` with PostgreSQL, MongoDB, or Redis
+2. **CDN for Audio** - Store generated audio files in S3 or similar
+3. **Rate Limiting** - Implement API rate limits to prevent abuse
+4. **User Authentication** - Add login/signup for tracking user podcasts
+5. **Caching** - Cache completed podcasts to reduce API calls
+6. **Monitoring** - Add logging and error tracking (e.g., Sentry)
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT
+MIT License - see [LICENSE](LICENSE) file for details
 
-## Contact
+## Acknowledgments
 
-- Email: contact@explainedin60sec.com
-- GitHub: [@yourusername](https://github.com/yourusername)
+- Powered by [Voltage Park AI Factory](https://voltagepark.com)
+- UI components from [Material UI](https://mui.com)
+- Built with [Next.js](https://nextjs.org)
 
 ---
 
-Built with ❤️ using React and Material UI
+**Questions or issues?** Open an issue on GitHub or contact the maintainers.
