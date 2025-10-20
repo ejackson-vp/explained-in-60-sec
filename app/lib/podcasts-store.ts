@@ -1,7 +1,7 @@
 // In-memory storage for podcast jobs (use database in production)
 interface Podcast {
   id: string;
-  status: 'processing' | 'completed' | 'failed';
+  status: 'queued' | 'processing' | 'completed' | 'failed';
   topic: string;
   title?: string;
   summary?: string;

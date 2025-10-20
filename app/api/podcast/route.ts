@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { podcasts } from '@/app/lib/podcasts-store';
+import { podcastLimiter } from '@/app/lib/concurrency-limiter';
 
 // Helper function to create content text from topic
 function createContentText(topic: string): string {
@@ -188,15 +189,30 @@ export async function POST(request: NextRequest) {
 
     const id = randomUUID();
 
+    // Get concurrency stats
+    const stats = podcastLimiter.getStats();
+    const willBeQueued = stats.activeCount >= stats.maxConcurrent;
+
     podcasts.set(id, {
       id,
-      status: 'processing',
+      status: willBeQueued ? 'queued' : 'processing',
       topic: topic.trim(),
       createdAt: new Date().toISOString()
     });
 
-    // Start async processing
-    processPodcast(id, topic.trim()).catch(err => {
+    // Start async processing with concurrency limiting
+    podcastLimiter.run(async () => {
+      // Update status to processing when it actually starts
+      const existing = podcasts.get(id);
+      if (existing && existing.status === 'queued') {
+        podcasts.set(id, {
+          ...existing,
+          status: 'processing'
+        });
+      }
+      
+      await processPodcast(id, topic.trim());
+    }).catch(err => {
       console.error(`Error processing podcast ${id}:`, err);
       const existing = podcasts.get(id);
       if (existing) {
@@ -210,8 +226,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       id,
-      status: 'processing',
-      topic: topic.trim()
+      status: willBeQueued ? 'queued' : 'processing',
+      topic: topic.trim(),
+      queueInfo: {
+        position: willBeQueued ? stats.queuedCount + 1 : 0,
+        activeGenerations: stats.activeCount,
+        maxConcurrent: stats.maxConcurrent
+      }
     }, { status: 201 });
 
   } catch (error) {
