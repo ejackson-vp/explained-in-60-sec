@@ -5,7 +5,8 @@ interface Podcast {
   topic: string;
   title?: string;
   summary?: string;
-  audioUrl?: string;
+  audioUrl?: string; // Actual VP URL (proxied via /api/audio/[id] to frontend)
+  thumbnailUrl?: string; // Actual image URL or local path (proxied via /api/thumbnail/[id] to frontend)
   duration?: number;
   createdAt: string;
   completedAt?: string;

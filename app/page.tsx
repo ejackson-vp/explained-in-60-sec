@@ -26,6 +26,7 @@ interface PodcastData {
   title?: string;
   summary?: string;
   audioUrl?: string;
+  thumbnailUrl?: string;
   duration?: number;
   createdAt?: string;
   completedAt?: string;
@@ -39,6 +40,7 @@ const exampleEpisodes = [
     title: 'Quantum Computing',
     teaser: 'Discover how quantum computers harness the strange properties of quantum mechanics to solve complex problems.',
     audioUrl: '/audio/quantum-computing.wav',
+    thumbnailUrl: '/thumbnails/quantum-computing.png',
   },
   {
     id: 2,
@@ -46,6 +48,7 @@ const exampleEpisodes = [
     title: 'Black Holes',
     teaser: 'Journey into the most mysterious objects in the universe where gravity becomes so strong that nothing can escape.',
     audioUrl: '/audio/black-holes.wav',
+    thumbnailUrl: '/thumbnails/black-holes.png',
   },
   {
     id: 3,
@@ -53,6 +56,7 @@ const exampleEpisodes = [
     title: 'CRISPR',
     teaser: 'Learn about the revolutionary gene-editing technology that could transform medicine and agriculture.',
     audioUrl: '/audio/crispr.wav',
+    thumbnailUrl: '/thumbnails/crispr.png',
   },
   {
     id: 4,
@@ -60,6 +64,7 @@ const exampleEpisodes = [
     title: 'Neural Networks',
     teaser: 'Understand the brain-inspired algorithms that power modern artificial intelligence and machine learning.',
     audioUrl: '/audio/neural-networks.wav',
+    thumbnailUrl: '/thumbnails/neural-networks.png',
   },
   {
     id: 5,
@@ -67,6 +72,7 @@ const exampleEpisodes = [
     title: 'Blockchain',
     teaser: 'Explore the distributed ledger technology that enables cryptocurrencies and decentralized applications.',
     audioUrl: '/audio/blockchain.wav',
+    thumbnailUrl: '/thumbnails/blockchain.png',
   },
   {
     id: 6,
@@ -74,6 +80,7 @@ const exampleEpisodes = [
     title: 'Climate Change',
     teaser: 'Get a concise overview of the science behind global warming and its impact on our planet.',
     audioUrl: '/audio/climate-change.wav',
+    thumbnailUrl: '/thumbnails/climate-change.png',
   },
 ];
 
@@ -287,6 +294,7 @@ export default function Home() {
                 title={episode.title}
                 teaser={episode.teaser}
                 audioUrl={episode.audioUrl}
+                thumbnailUrl={episode.thumbnailUrl}
                 onPlay={() => handleCardPlay(episode.id)}
               />
             </Box>
@@ -411,6 +419,7 @@ export default function Home() {
                 title={createdPodcast.title || `60 seconds on: ${createdPodcast.topic}`}
                 teaser={createdPodcast.summary || `An AI-generated deep dive into ${createdPodcast.topic}.`}
                 audioUrl={createdPodcast.audioUrl || ''}
+                thumbnailUrl={createdPodcast.thumbnailUrl}
               />
 
               <Box sx={{ textAlign: 'center', mt: 3 }}>

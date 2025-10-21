@@ -18,12 +18,15 @@ export async function GET(
       );
     }
 
-    // Return the podcast with the proxy URL for audio
+    // Return the podcast with the proxy URLs for audio and thumbnail
     const response = {
       ...podcast,
       audioUrl: podcast.status === 'completed' && podcast.audioUrl 
         ? `/api/audio/${id}` 
-        : podcast.audioUrl
+        : podcast.audioUrl,
+      thumbnailUrl: podcast.status === 'completed' && podcast.thumbnailUrl && !podcast.thumbnailUrl.startsWith('/')
+        ? `/api/thumbnail/${id}`
+        : podcast.thumbnailUrl
     };
 
     return NextResponse.json(response);

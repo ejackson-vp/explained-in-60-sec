@@ -16,13 +16,15 @@ interface AudioCardProps {
   title: string;
   teaser: string;
   audioUrl: string;
+  thumbnailUrl?: string;
   onPlay?: () => void;
 }
 
-export default function AudioCard({ title, teaser, audioUrl, onPlay }: AudioCardProps) {
+export default function AudioCard({ title, teaser, audioUrl, thumbnailUrl, onPlay }: AudioCardProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [imageError, setImageError] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
@@ -116,6 +118,45 @@ export default function AudioCard({ title, teaser, audioUrl, onPlay }: AudioCard
         },
       }}
     >
+      {thumbnailUrl && !imageError && (
+        <Box
+          component="img"
+          src={thumbnailUrl}
+          alt={`${title} thumbnail`}
+          onError={(e) => {
+            console.error('Failed to load thumbnail:', thumbnailUrl);
+            setImageError(true);
+          }}
+          sx={{
+            width: '100%',
+            height: 'auto',
+            display: 'block',
+            bgcolor: (theme) => 
+              theme.palette.mode === 'light' 
+                ? 'grey.100' 
+                : 'grey.900',
+          }}
+        />
+      )}
+      {(!thumbnailUrl || imageError) && (
+        <Box
+          sx={{
+            width: '100%',
+            height: 200,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: (theme) => 
+              theme.palette.mode === 'light' 
+                ? 'grey.100' 
+                : 'grey.800',
+          }}
+        >
+          <Typography variant="h3" sx={{ opacity: 0.3 }}>
+            🎙️
+          </Typography>
+        </Box>
+      )}
       <CardContent sx={{ flexGrow: 1, pb: 2 }}>
         <Typography variant="h6" component="h3" gutterBottom fontWeight={600}>
           {title}

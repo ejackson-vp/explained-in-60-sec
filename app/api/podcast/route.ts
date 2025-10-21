@@ -8,15 +8,20 @@ function createContentText(topic: string): string {
   return `Explain the following topic in a concise, engaging way suitable for a 60-second audio podcast: ${topic}`;
 }
 
-// Async function to poll VP job status
-async function pollVPJobStatus(vpJobId: string, bearerToken: string, apiBaseUrl: string): Promise<any> {
+// Helper function to create thumbnail prompt from topic
+function createThumbnailPrompt(topic: string): string {
+  return `A Ghibli style thumbnail image for a podcast on the following topic: ${topic}.`;
+}
+
+// Async function to poll job status (works for both audio and thumbnail jobs)
+async function pollJobStatus(jobId: string, bearerToken: string, apiBaseUrl: string, jobType: string = 'job'): Promise<any> {
   const maxAttempts = 48; // 4 minutes with 5 second intervals
   const pollInterval = 5000; // 5 seconds
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
       // Construct the status check URL - assuming the job ID endpoint
-      const statusUrl = `${apiBaseUrl}/${vpJobId}?user_id=anonymous-podcast`;
+      const statusUrl = `${apiBaseUrl}/${jobId}?user_id=anonymous-podcast`;
       
       const response = await fetch(statusUrl, {
         method: 'GET',
@@ -26,7 +31,7 @@ async function pollVPJobStatus(vpJobId: string, bearerToken: string, apiBaseUrl:
       });
 
       if (!response.ok) {
-        console.error(`VP status check failed: ${response.status}`);
+        console.error(`${jobType} status check failed: ${response.status}`);
         await new Promise(resolve => setTimeout(resolve, pollInterval));
         continue;
       }
@@ -36,18 +41,18 @@ async function pollVPJobStatus(vpJobId: string, bearerToken: string, apiBaseUrl:
       if (result.status === 'completed') {
         return result;
       } else if (result.status === 'failed' || result.error) {
-        throw new Error(result.error?.message || 'VP job failed');
+        throw new Error(result.error?.message || `${jobType} job failed`);
       }
 
       // Still processing, wait before next poll
       await new Promise(resolve => setTimeout(resolve, pollInterval));
     } catch (error) {
-      console.error(`Error polling VP job ${vpJobId}:`, error);
+      console.error(`Error polling ${jobType} job ${jobId}:`, error);
       throw error;
     }
   }
 
-  throw new Error('VP job polling timeout');
+  throw new Error(`${jobType} job polling timeout`);
 }
 
 // Async function to process podcast with Voltage Park API
@@ -111,7 +116,7 @@ async function processPodcast(id: string, topic: string) {
     });
 
     // Step 2: Poll for completion
-    const completedJob = await pollVPJobStatus(vpJobId, bearerToken, apiUrl);
+    const completedJob = await pollJobStatus(vpJobId, bearerToken, apiUrl, 'audio');
 
     // Step 3: Extract audio URL from artifacts or output
     let audioUrl = null;
@@ -140,7 +145,97 @@ async function processPodcast(id: string, topic: string) {
       vpAudioUrl = `${apiBaseUrl}${audioUrl}`;
     }
 
-    // Step 4: Update podcast with audio URL
+    // Step 3.5: Generate thumbnail image
+    let thumbnailUrl = '/thumbnails/default.svg'; // Default fallback
+    
+    const thumbnailApiUrl = process.env.THUMBNAIL_API_URL;
+    const thumbnailBearerToken = process.env.THUMBNAIL_BEARER_TOKEN;
+    
+    console.log(`[Podcast ${id}] Starting thumbnail generation for topic: ${topic}`);
+    console.log(`[Podcast ${id}] Thumbnail API configured:`, !!thumbnailApiUrl && !!thumbnailBearerToken);
+    
+    if (thumbnailApiUrl && thumbnailBearerToken) {
+      try {
+        const thumbnailPrompt = createThumbnailPrompt(topic);
+        console.log(`[Podcast ${id}] Thumbnail prompt:`, thumbnailPrompt);
+        
+        // Create the thumbnail generation job
+        const thumbnailResponse = await fetch(thumbnailApiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${thumbnailBearerToken}`
+          },
+          body: JSON.stringify({
+            data: {
+              text: {
+                content: thumbnailPrompt,
+                language: 'en'
+              }
+            },
+            factory_settings: {
+              num_inference_steps: 50,
+              enhance_prompt: true,
+              preprocess_only: false
+            },
+            metadata: {
+              user_id: 'anonymous-podcast',
+              topic: topic
+            }
+          })
+        });
+
+        if (thumbnailResponse.ok) {
+          const thumbnailResult = await thumbnailResponse.json();
+          const thumbnailJobId = thumbnailResult.id;
+          console.log(`[Podcast ${id}] Thumbnail job created with ID:`, thumbnailJobId);
+
+          // Poll for thumbnail completion
+          const completedThumbnail = await pollJobStatus(thumbnailJobId, thumbnailBearerToken, thumbnailApiUrl, 'thumbnail');
+          console.log(`[Podcast ${id}] Thumbnail job completed:`, completedThumbnail);
+
+          // Extract image URL from artifacts or output
+          let imageUrl = null;
+          
+          // Check artifacts array
+          if (completedThumbnail.artifacts && completedThumbnail.artifacts.length > 0) {
+            const imageArtifact = completedThumbnail.artifacts.find((a: any) => 
+              a.type === 'image' || a.mime_type?.includes('image')
+            );
+            imageUrl = imageArtifact?.url || imageArtifact?.uri;
+          }
+          
+          // Check output array as fallback
+          if (!imageUrl && completedThumbnail.output && completedThumbnail.output.length > 0) {
+            imageUrl = completedThumbnail.output[0]?.url || completedThumbnail.output[0]?.uri;
+          }
+
+          if (imageUrl) {
+            // Convert relative URL to absolute URL if needed
+            if (imageUrl.startsWith('/')) {
+              const apiBaseUrl = new URL(thumbnailApiUrl).origin;
+              thumbnailUrl = `${apiBaseUrl}${imageUrl}`;
+            } else {
+              thumbnailUrl = imageUrl;
+            }
+            console.log(`[Podcast ${id}] Thumbnail URL extracted:`, thumbnailUrl);
+          } else {
+            console.warn(`[Podcast ${id}] No image URL found in completed thumbnail job`);
+          }
+        } else {
+          console.error(`[Podcast ${id}] Thumbnail API request failed:`, thumbnailResponse.status, await thumbnailResponse.text());
+        }
+      } catch (thumbnailError) {
+        console.error(`[Podcast ${id}] Failed to generate thumbnail, using default:`, thumbnailError);
+        // Continue with default thumbnail
+      }
+    } else {
+      console.log(`[Podcast ${id}] Thumbnail generation not configured, using default thumbnail`);
+    }
+    
+    console.log(`[Podcast ${id}] Final thumbnail URL:`, thumbnailUrl);
+
+    // Step 4: Update podcast with audio URL and thumbnail
     // Store the VP URL but use our proxy endpoint for the public audioUrl
     podcasts.set(id, {
       id,
@@ -149,6 +244,7 @@ async function processPodcast(id: string, topic: string) {
       title: `60 seconds on: ${topic}`,
       summary: `An AI-generated podcast on "${topic}".`,
       audioUrl: vpAudioUrl, // Store the actual VP URL (used by proxy)
+      thumbnailUrl: thumbnailUrl, // Generated or default thumbnail
       duration: 60,
       vpJobId,
       createdAt: existingPodcast?.createdAt || new Date().toISOString(),
