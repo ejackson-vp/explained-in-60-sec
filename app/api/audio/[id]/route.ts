@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { podcasts } from '@/app/lib/podcasts-store';
 
 export async function GET(
   request: NextRequest,
@@ -7,15 +6,16 @@ export async function GET(
 ) {
   try {
     const params = await context.params;
-    const { id } = params;
+    // Next.js automatically decodes path parameters once, so no need to decode again
+    const { id: audioUrl } = params;
 
-    // Get the podcast from the store
-    const podcast = podcasts.get(id);
-
-    if (!podcast || !podcast.audioUrl) {
+    // Validate it's a proper URL
+    try {
+      new URL(audioUrl);
+    } catch {
       return NextResponse.json(
-        { error: 'Podcast audio not found' },
-        { status: 404 }
+        { error: 'Invalid audio URL' },
+        { status: 400 }
       );
     }
 
@@ -29,14 +29,14 @@ export async function GET(
       );
     }
 
-    // Fetch the audio from Voltage Park with authentication
     // Add user_id query parameter if not already present
-    const audioUrl = new URL(podcast.audioUrl);
-    if (!audioUrl.searchParams.has('user_id')) {
-      audioUrl.searchParams.set('user_id', 'anonymous-podcast');
+    const fullAudioUrl = new URL(audioUrl);
+    if (!fullAudioUrl.searchParams.has('user_id')) {
+      fullAudioUrl.searchParams.set('user_id', 'anonymous-podcast');
     }
     
-    const audioResponse = await fetch(audioUrl.toString(), {
+    // Fetch the audio from Voltage Park with authentication
+    const audioResponse = await fetch(fullAudioUrl.toString(), {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${bearerToken}`
@@ -55,11 +55,12 @@ export async function GET(
     const audioData = await audioResponse.arrayBuffer();
 
     // Check if this is a download request
-    const url = new URL(request.url);
-    const isDownload = url.searchParams.get('download') === 'true';
+    const requestUrl = new URL(request.url);
+    const isDownload = requestUrl.searchParams.get('download') === 'true';
+    const topic = requestUrl.searchParams.get('topic') || 'podcast';
 
     // Create filename from topic
-    const filename = `${podcast.topic.replace(/\s+/g, '-').toLowerCase()}-podcast.wav`;
+    const filename = `${topic.replace(/\s+/g, '-').toLowerCase()}-podcast.wav`;
 
     // Return the audio with appropriate headers
     const headers: Record<string, string> = {

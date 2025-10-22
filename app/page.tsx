@@ -20,16 +20,14 @@ import DownloadIcon from '@mui/icons-material/Download';
 import AudioCard from './components/AudioCard';
 
 interface PodcastData {
-  id: string;
+  audioJobId: string;
+  thumbnailJobId: string | null;
   status: 'processing' | 'completed' | 'failed';
   topic: string;
   title?: string;
   summary?: string;
   audioUrl?: string;
   thumbnailUrl?: string;
-  duration?: number;
-  createdAt?: string;
-  completedAt?: string;
   error?: string;
 }
 
@@ -90,7 +88,12 @@ export default function Home() {
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdPodcast, setCreatedPodcast] = useState<PodcastData | null>(null);
-  const [pollingId, setPollingId] = useState<string | null>(null);
+  const [pollingData, setPollingData] = useState<{
+    audioJobId: string;
+    thumbnailJobId: string | null;
+    topic: string;
+    startTime: number;
+  } | null>(null);
 
   const handleScrollToExamples = () => {
     const element = document.getElementById('examples-section');
@@ -133,8 +136,13 @@ export default function Home() {
         throw new Error(errorData.error || 'Failed to create podcast');
       }
 
-      const data = await response.json() as PodcastData;
-      setPollingId(data.id);
+      const data = await response.json();
+      setPollingData({
+        audioJobId: data.audioJobId,
+        thumbnailJobId: data.thumbnailJobId,
+        topic: topic.trim(),
+        startTime: Date.now()
+      });
     } catch (err) {
       const error = err as Error;
       setError(error.message || 'Failed to create podcast');
@@ -142,41 +150,233 @@ export default function Home() {
     }
   };
 
-  // Poll for podcast status
+  // Poll for podcast status with proper error handling and timeout
   useEffect(() => {
-    if (!pollingId) return;
+    if (!pollingData) return;
+
+    const POLL_INTERVAL = 3000; // 3 seconds
+    const MAX_POLL_TIME = 180000; // 3 minutes timeout
+    const { audioJobId, thumbnailJobId, topic, startTime } = pollingData;
+
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
 
     const pollInterval = setInterval(async () => {
+      // Check for timeout
+      const elapsed = Date.now() - startTime;
+      if (elapsed > MAX_POLL_TIME) {
+        setError('Generation timed out. Please try again.');
+        setIsCreating(false);
+        setPollingData(null);
+        clearInterval(pollInterval);
+        return;
+      }
+
       try {
-        const response = await fetch(`/api/podcast/${pollingId}`);
-        if (!response.ok) throw new Error('Failed to fetch status');
+        // Poll both audio and thumbnail jobs
+        const [audioResponse, thumbnailResponse] = await Promise.all([
+          fetch(`/api/podcast/${audioJobId}`),
+          thumbnailJobId 
+            ? fetch(`/api/podcast/${thumbnailJobId}?type=thumbnail`) 
+            : Promise.resolve(null)
+        ]);
 
-        const data = await response.json() as PodcastData;
-
-        if (data.status === 'completed') {
-          setCreatedPodcast(data);
-          setIsCreating(false);
-          setPollingId(null);
-          clearInterval(pollInterval);
-        } else if (data.status === 'failed') {
-          setError(data.error || 'Failed to generate podcast');
-          setIsCreating(false);
-          setPollingId(null);
-          clearInterval(pollInterval);
+        if (!audioResponse.ok) {
+          throw new Error(`Audio job status check failed: ${audioResponse.status}`);
         }
+
+        const audioData = await audioResponse.json();
+        const thumbnailData = thumbnailResponse?.ok 
+          ? await thumbnailResponse.json() 
+          : null;
+
+        // Reset retry count on successful poll
+        retryCount = 0;
+
+        // Check if audio job failed
+        if (audioData.status === 'failed') {
+          setError(audioData.error || 'Audio generation failed');
+          setIsCreating(false);
+          setPollingData(null);
+          clearInterval(pollInterval);
+          return;
+        }
+
+        // Check if audio job completed
+        const audioCompleted = audioData.status === 'completed';
+        const thumbnailCompleted = !thumbnailJobId || thumbnailData?.status === 'completed' || thumbnailData?.status === 'failed';
+        
+        if (audioCompleted && thumbnailCompleted) {
+          // Both jobs are done (or thumbnail not requested), show result
+          // Extract audio URL from artifacts or output
+          let audioUrl = null;
+          if (audioData.artifacts?.length > 0) {
+            const audioArtifact = audioData.artifacts.find((a: any) => 
+              a.type === 'audio' || a.mime_type?.includes('audio')
+            );
+            audioUrl = audioArtifact?.url || audioArtifact?.uri;
+          }
+          if (!audioUrl && audioData.output?.length > 0) {
+            audioUrl = audioData.output[0]?.url || audioData.output[0]?.uri;
+          }
+
+          // Validate that we got an audio URL
+          if (!audioUrl) {
+            setError('No audio file found in completed job');
+            setIsCreating(false);
+            setPollingData(null);
+            clearInterval(pollInterval);
+            return;
+          }
+
+          // Validate it's a full URL (not relative)
+          if (!audioUrl.startsWith('http://') && !audioUrl.startsWith('https://')) {
+            console.error('Received invalid audio URL:', audioUrl);
+            setError('Invalid audio URL format. Please try again or contact support if the issue persists.');
+            setIsCreating(false);
+            setPollingData(null);
+            clearInterval(pollInterval);
+            return;
+          }
+
+          // Extract thumbnail URL if available
+          let thumbnailUrl = '/thumbnails/default.svg';
+          console.log('[Thumbnail] Status check:', {
+            thumbnailJobId,
+            thumbnailStatus: thumbnailData?.status,
+            hasArtifacts: thumbnailData?.artifacts?.length,
+            hasOutput: thumbnailData?.output?.length
+          });
+          
+          if (thumbnailData?.status === 'completed') {
+            let extractedThumbUrl = null;
+            if (thumbnailData.artifacts?.length > 0) {
+              const imgArtifact = thumbnailData.artifacts.find((a: any) => 
+                a.type === 'image' || a.mime_type?.includes('image')
+              );
+              extractedThumbUrl = imgArtifact?.url || imgArtifact?.uri;
+            }
+            if (!extractedThumbUrl && thumbnailData.output?.length > 0) {
+              extractedThumbUrl = thumbnailData.output[0]?.url || thumbnailData.output[0]?.uri;
+            }
+            
+            console.log('[Thumbnail] Extracted URL:', extractedThumbUrl);
+            
+            // Validate and use thumbnail URL
+            if (extractedThumbUrl) {
+              // Only use if it's a full URL or local path
+              if (extractedThumbUrl.startsWith('http://') || extractedThumbUrl.startsWith('https://')) {
+                thumbnailUrl = extractedThumbUrl;
+                console.log('[Thumbnail] Using extracted URL:', thumbnailUrl);
+              } else if (extractedThumbUrl.startsWith('/')) {
+                // Relative URLs should not happen - backend should normalize them
+                console.warn('[Thumbnail] Received relative URL (should be normalized by backend):', extractedThumbUrl);
+              } else {
+                console.warn('[Thumbnail] Invalid URL format:', extractedThumbUrl);
+              }
+            } else {
+              console.warn('[Thumbnail] No URL found in completed job');
+            }
+          } else if (thumbnailData) {
+            console.log('[Thumbnail] Still processing, status:', thumbnailData.status);
+          } else {
+            console.log('[Thumbnail] No thumbnail job or job failed');
+          }
+
+          // Preload the thumbnail image before showing result
+          const finalThumbnailUrl = thumbnailUrl && !thumbnailUrl.startsWith('/') 
+            ? `/api/thumbnail/${encodeURIComponent(thumbnailUrl)}` 
+            : thumbnailUrl;
+
+          if (finalThumbnailUrl && !finalThumbnailUrl.startsWith('/thumbnails/')) {
+            // Preload remote thumbnail
+            const img = new Image();
+            img.onload = () => {
+              console.log('[Thumbnail] Preloaded successfully');
+              // Set completed podcast data after image is loaded
+              setCreatedPodcast({
+                audioJobId,
+                thumbnailJobId,
+                status: 'completed',
+                topic,
+                title: `60 seconds on: ${topic}`,
+                summary: `An AI-generated podcast on "${topic}".`,
+                audioUrl,
+                thumbnailUrl
+              });
+
+              setIsCreating(false);
+              setPollingData(null);
+              clearInterval(pollInterval);
+            };
+            img.onerror = () => {
+              console.error('[Thumbnail] Preload failed, showing anyway');
+              // Show result even if thumbnail fails to load
+              setCreatedPodcast({
+                audioJobId,
+                thumbnailJobId,
+                status: 'completed',
+                topic,
+                title: `60 seconds on: ${topic}`,
+                summary: `An AI-generated podcast on "${topic}".`,
+                audioUrl,
+                thumbnailUrl
+              });
+
+              setIsCreating(false);
+              setPollingData(null);
+              clearInterval(pollInterval);
+            };
+            img.src = finalThumbnailUrl;
+          } else {
+            // Local thumbnail or default - no preload needed
+            setCreatedPodcast({
+              audioJobId,
+              thumbnailJobId,
+              status: 'completed',
+              topic,
+              title: `60 seconds on: ${topic}`,
+              summary: `An AI-generated podcast on "${topic}".`,
+              audioUrl,
+              thumbnailUrl
+            });
+
+            setIsCreating(false);
+            setPollingData(null);
+            clearInterval(pollInterval);
+          }
+        } else if (audioCompleted && !thumbnailCompleted) {
+          // Audio is done but waiting for thumbnail
+          console.log('[Polling] Audio completed, waiting for thumbnail...');
+        } else {
+          // Audio still processing
+          console.log('[Polling] Audio still processing...');
+        }
+        // Continue polling
       } catch (err) {
         console.error('Polling error:', err);
+        retryCount++;
+        
+        // If we've exceeded max retries, fail gracefully
+        if (retryCount >= MAX_RETRIES) {
+          setError('Failed to check generation status. Please try again.');
+          setIsCreating(false);
+          setPollingData(null);
+          clearInterval(pollInterval);
+        }
+        // Otherwise, retry on next interval
       }
-    }, 3000);
+    }, POLL_INTERVAL);
 
     return () => clearInterval(pollInterval);
-  }, [pollingId]);
+  }, [pollingData]);
 
   const handleDownload = () => {
     if (createdPodcast?.audioUrl) {
       const link = document.createElement('a');
-      link.href = `${createdPodcast.audioUrl}?download=true`;
-      link.download = `${topic.replace(/\s+/g, '-').toLowerCase()}-podcast.wav`;
+      const encodedUrl = encodeURIComponent(createdPodcast.audioUrl);
+      link.href = `/api/audio/${encodedUrl}?download=true&topic=${encodeURIComponent(createdPodcast.topic)}`;
+      link.download = `${createdPodcast.topic.replace(/\s+/g, '-').toLowerCase()}-podcast.wav`;
       link.click();
     }
   };
@@ -385,6 +585,8 @@ export default function Home() {
           {createdPodcast && (
             <Box
               sx={{
+                maxWidth: 576,
+                mx: 'auto',
                 animation: 'fadeIn 0.5s ease-in',
                 '@keyframes fadeIn': {
                   from: { opacity: 0, transform: 'translateY(20px)' },
@@ -418,8 +620,10 @@ export default function Home() {
               <AudioCard
                 title={createdPodcast.title || `60 seconds on: ${createdPodcast.topic}`}
                 teaser={createdPodcast.summary || `An AI-generated deep dive into ${createdPodcast.topic}.`}
-                audioUrl={createdPodcast.audioUrl || ''}
-                thumbnailUrl={createdPodcast.thumbnailUrl}
+                audioUrl={createdPodcast.audioUrl ? `/api/audio/${encodeURIComponent(createdPodcast.audioUrl)}` : ''}
+                thumbnailUrl={createdPodcast.thumbnailUrl && !createdPodcast.thumbnailUrl.startsWith('/') 
+                  ? `/api/thumbnail/${encodeURIComponent(createdPodcast.thumbnailUrl)}` 
+                  : createdPodcast.thumbnailUrl}
               />
 
               <Box sx={{ textAlign: 'center', mt: 3 }}>

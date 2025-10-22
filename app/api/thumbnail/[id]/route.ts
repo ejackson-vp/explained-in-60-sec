@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { podcasts } from '@/app/lib/podcasts-store';
 
 export async function GET(
   request: NextRequest,
@@ -7,21 +6,22 @@ export async function GET(
 ) {
   try {
     const params = await context.params;
-    const { id } = params;
-
-    // Get the podcast from the store
-    const podcast = podcasts.get(id);
-
-    if (!podcast || !podcast.thumbnailUrl) {
-      return NextResponse.json(
-        { error: 'Podcast thumbnail not found' },
-        { status: 404 }
-      );
-    }
+    // Next.js automatically decodes path parameters once, so no need to decode again
+    const { id: thumbnailUrl } = params;
 
     // If it's a local thumbnail (default.svg or pre-generated), serve it directly
-    if (podcast.thumbnailUrl.startsWith('/')) {
-      return NextResponse.redirect(new URL(podcast.thumbnailUrl, request.url));
+    if (thumbnailUrl.startsWith('/')) {
+      return NextResponse.redirect(new URL(thumbnailUrl, request.url));
+    }
+
+    // Validate it's a proper URL
+    try {
+      new URL(thumbnailUrl);
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid thumbnail URL' },
+        { status: 400 }
+      );
     }
 
     // Get bearer token from environment for remote thumbnails
@@ -34,14 +34,14 @@ export async function GET(
       );
     }
 
-    // Fetch the thumbnail from Voltage Park with authentication
     // Add user_id query parameter if not already present
-    const thumbnailUrl = new URL(podcast.thumbnailUrl);
-    if (!thumbnailUrl.searchParams.has('user_id')) {
-      thumbnailUrl.searchParams.set('user_id', 'anonymous-podcast');
+    const fullThumbnailUrl = new URL(thumbnailUrl);
+    if (!fullThumbnailUrl.searchParams.has('user_id')) {
+      fullThumbnailUrl.searchParams.set('user_id', 'anonymous-podcast');
     }
     
-    const thumbnailResponse = await fetch(thumbnailUrl.toString(), {
+    // Fetch the thumbnail from Voltage Park with authentication
+    const thumbnailResponse = await fetch(fullThumbnailUrl.toString(), {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${bearerToken}`
