@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Analytics } from '@vercel/analytics/next';
 import ThemeRegistry from './components/ThemeRegistry';
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ export default function RootLayout({
         <ThemeRegistry>
           {children}
         </ThemeRegistry>
+        <Analytics />
       </body>
     </html>
   );
