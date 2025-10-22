@@ -13,10 +13,14 @@ import {
   Alert,
   Paper,
   IconButton,
+  Link,
 } from '@mui/material';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import HeadphonesIcon from '@mui/icons-material/Headphones';
 import DownloadIcon from '@mui/icons-material/Download';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import SecurityIcon from '@mui/icons-material/Security';
+import SpeedIcon from '@mui/icons-material/Speed';
 import AudioCard from './components/AudioCard';
 
 interface PodcastData {
@@ -432,6 +436,7 @@ export default function Home() {
                 gap: 2,
                 justifyContent: 'center',
                 flexWrap: 'wrap',
+                mb: 6,
               }}
             >
               <Button
@@ -461,6 +466,161 @@ export default function Home() {
                 Create your own
               </Button>
             </Box>
+
+            {/* Voltage Park AI Factory Info Box */}
+            <Paper
+              elevation={3}
+              sx={{
+                p: 4,
+                borderRadius: 3,
+                background: (theme) =>
+                  theme.palette.mode === 'light'
+                    ? 'linear-gradient(135deg, rgba(94, 53, 177, 0.05) 0%, rgba(30, 136, 229, 0.05) 100%)'
+                    : 'linear-gradient(135deg, rgba(124, 77, 255, 0.1) 0%, rgba(66, 165, 245, 0.1) 100%)',
+                border: '1px solid',
+                borderColor: (theme) =>
+                  theme.palette.mode === 'light'
+                    ? alpha(theme.palette.primary.main, 0.2)
+                    : alpha(theme.palette.primary.main, 0.3),
+                maxWidth: '900px',
+                mx: 'auto',
+              }}
+            >
+              <Box sx={{ textAlign: 'center', mb: 3 }}>
+                <Typography
+                  variant="overline"
+                  sx={{
+                    fontSize: '0.9rem',
+                    fontWeight: 700,
+                    color: 'primary.main',
+                    letterSpacing: '0.1em',
+                  }}
+                >
+                  DEMO APPLICATION
+                </Typography>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 700,
+                    mt: 1,
+                    mb: 2,
+                  }}
+                >
+                  Built with{' '}
+                  <Link
+                    href="https://www.voltagepark.com/ai-factory"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{
+                      color: 'inherit',
+                      textDecoration: 'none',
+                      borderBottom: '3px solid',
+                      borderBottomColor: 'primary.main',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        color: 'primary.main',
+                      },
+                    }}
+                  >
+                    Voltage Park AI Factory
+                  </Link>
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '700px', mx: 'auto' }}>
+                  This app was built using pre-configured, customizable templates that let you deploy 
+                  production AI systems in minutes on a model- and compute-agnostic stack.
+                </Typography>
+              </Box>
+
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+                  gap: 3,
+                  mt: 4,
+                }}
+              >
+                <Box sx={{ textAlign: 'center' }}>
+                  <Box
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: '50%',
+                      background: (theme) =>
+                        theme.palette.mode === 'light'
+                          ? alpha(theme.palette.primary.main, 0.1)
+                          : alpha(theme.palette.primary.main, 0.2),
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mx: 'auto',
+                      mb: 1.5,
+                    }}
+                  >
+                    <RocketLaunchIcon sx={{ fontSize: 28, color: 'primary.main' }} />
+                  </Box>
+                  <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                    Deploy in Minutes
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
+                    No infrastructure setup required
+                  </Typography>
+                </Box>
+
+                <Box sx={{ textAlign: 'center' }}>
+                  <Box
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: '50%',
+                      background: (theme) =>
+                        theme.palette.mode === 'light'
+                          ? alpha(theme.palette.secondary.main, 0.1)
+                          : alpha(theme.palette.secondary.main, 0.2),
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mx: 'auto',
+                      mb: 1.5,
+                    }}
+                  >
+                    <SpeedIcon sx={{ fontSize: 28, color: 'secondary.main' }} />
+                  </Box>
+                  <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                    Lightning Fast
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
+                    Optimized AI inference
+                  </Typography>
+                </Box>
+
+                <Box sx={{ textAlign: 'center' }}>
+                  <Box
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: '50%',
+                      background: (theme) =>
+                        theme.palette.mode === 'light'
+                          ? alpha(theme.palette.primary.main, 0.1)
+                          : alpha(theme.palette.primary.main, 0.2),
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mx: 'auto',
+                      mb: 1.5,
+                    }}
+                  >
+                    <SecurityIcon sx={{ fontSize: 28, color: 'primary.main' }} />
+                  </Box>
+                  <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                    Enterprise Security
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
+                    Built-in compliance
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
           </Box>
         </Container>
       </Box>
