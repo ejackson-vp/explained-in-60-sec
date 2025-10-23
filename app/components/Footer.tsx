@@ -2,6 +2,7 @@
 
 import { Box, Container, Typography, Link, IconButton, Divider } from '@mui/material';
 import { GitHub, LinkedIn } from '@mui/icons-material';
+import { track } from '@vercel/analytics';
 
 export default function Footer() {
   return (
@@ -76,6 +77,7 @@ export default function Footer() {
             href="https://voltagepark.com/ai-factory"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => track('voltage_park_link_click', { location: 'footer' })}
             color="primary"
             underline="hover"
             sx={{ fontWeight: 600 }}

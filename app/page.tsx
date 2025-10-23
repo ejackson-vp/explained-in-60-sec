@@ -21,6 +21,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import SecurityIcon from '@mui/icons-material/Security';
 import SpeedIcon from '@mui/icons-material/Speed';
+import { track } from '@vercel/analytics';
 import AudioCard from './components/AudioCard';
 
 interface PodcastData {
@@ -141,6 +142,12 @@ export default function Home() {
       }
 
       const data = await response.json();
+      
+      // Track podcast generation start
+      track('podcast_generation_started', {
+        topic: topic.trim(),
+      });
+      
       setPollingData({
         audioJobId: data.audioJobId,
         thumbnailJobId: data.thumbnailJobId,
@@ -309,6 +316,12 @@ export default function Home() {
                 thumbnailUrl
               });
 
+              // Track successful podcast generation
+              track('podcast_generation_completed', {
+                topic,
+                duration: Date.now() - startTime,
+              });
+
               setIsCreating(false);
               setPollingData(null);
               clearInterval(pollInterval);
@@ -327,6 +340,12 @@ export default function Home() {
                 thumbnailUrl
               });
 
+              // Track successful podcast generation
+              track('podcast_generation_completed', {
+                topic,
+                duration: Date.now() - startTime,
+              });
+
               setIsCreating(false);
               setPollingData(null);
               clearInterval(pollInterval);
@@ -343,6 +362,12 @@ export default function Home() {
               summary: `An AI-generated podcast on "${topic}".`,
               audioUrl,
               thumbnailUrl
+            });
+
+            // Track successful podcast generation
+            track('podcast_generation_completed', {
+              topic,
+              duration: Date.now() - startTime,
             });
 
             setIsCreating(false);
@@ -511,6 +536,7 @@ export default function Home() {
                     href="https://www.voltagepark.com/ai-factory"
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => track('voltage_park_link_click', { location: 'hero_section' })}
                     sx={{
                       color: 'inherit',
                       textDecoration: 'none',

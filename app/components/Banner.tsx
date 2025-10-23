@@ -2,6 +2,7 @@
 
 import { Box, Container, Typography, Link } from '@mui/material';
 import { Bolt } from '@mui/icons-material';
+import { track } from '@vercel/analytics';
 
 export default function Banner() {
   return (
@@ -42,6 +43,7 @@ export default function Banner() {
               href="https://voltagepark.com/ai-factory-preview"
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => track('voltage_park_link_click', { location: 'banner', cta: 'try_for_free' })}
               sx={{
                 color: 'white',
                 textDecoration: 'none',
